@@ -11,9 +11,11 @@ import { FormGroup, FormArray } from '@angular/forms';
           *ngFor="let item of stocks; let i = index;">
           
           <div class="stock-product__content" [formGroupName]="i">
+            
             <div class="stock-product__name">
               {{ item.value.product_id }}
             </div>
+
             <input 
               type="number"
               step="10"

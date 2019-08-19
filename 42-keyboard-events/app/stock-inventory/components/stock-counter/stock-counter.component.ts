@@ -87,6 +87,7 @@ export class StockCounterComponent implements ControlValueAccessor {
     event.stopPropagation();
     this.onTouch();
   }
+
   onFocus(event: FocusEvent) {
     this.focus = true;
     event.preventDefault();
@@ -101,6 +102,7 @@ export class StockCounterComponent implements ControlValueAccessor {
     }
     this.onTouch();
   }
+  
   decrement() {
     if (this.value > this.min) {
       this.value = this.value - this.step;

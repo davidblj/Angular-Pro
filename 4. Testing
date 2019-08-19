@@ -1,0 +1,370 @@
+
+
+Basic testing with jasmine
+
+	import { FileSizePipe } from './file-size.pipe';
+
+	describe('FileSizePipe', () => {
+
+	  describe('Isolate FileSizePipe test', () => {
+		
+		const pipe = new FileSizePipe();
+
+		it('should convert bytes to megabytes', () => {
+		  expect(pipe.transform(123456789)).toBe('117.74MB');
+		  expect(pipe.transform(987654321)).toBe('941.90MB');
+		});
+		
+	  });
+
+	});
+	
+
+Shallow testing (behavioural testing of our components inside angular components)
+
+
+	import { TestBed, ComponentFixture } from '@angular/core/testing';
+	import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+
+	// test environment set up. we are bootstraping an angular app for testing. This done once
+	// in your application 
+			
+	TestBed.initTestEnvironment(
+	  BrowserDynamicTestingModule,
+	  platformBrowserDynamicTesting()
+	);
+
+	describe('FileSizePipe', () => {
+
+		describe('Shallow FileSizePipe test', () => {
+
+		// virtual component set up
+		@Component({
+		  template: `
+			Size: {{ size | filesize:suffix }}
+		  `
+		})
+		class TestComponent {
+		  suffix;
+		  size = 123456789;
+		}
+
+		let component: TestComponent;
+		let fixture: ComponentFixture<TestComponent>;
+		let el: HTMLElement;
+
+		beforeEach(() => {
+
+		  // module configuration, much like an angular module does. Here we include our virtual component
+		  // and the pipe we would like to test
+		  
+		  TestBed.configureTestingModule({
+			declarations: [
+			  FileSizePipe,
+			  TestComponent
+			]
+		  });
+		  
+			
+		  fixture = TestBed.createComponent(TestComponent);  // this property holds information about 
+		  													 // our mounted component
+		  component = fixture.componentInstance;
+		  el = fixture.nativeElement;		  
+		});
+
+		it('should convert bytes to megabytes', () => {
+		  
+		  fixture.detectChanges();							// you need to call this at the beginning of each test
+		  													// as this function calls the life cicle hooks that
+		  													// angular normally does each time is instantiating
+		  													// a component	 
+		  
+		  expect(el.textContent).toContain('Size: 117.74MB');
+
+		  component.size = 1029281;		  					// you may change a property, and test based on that
+		  													// changes
+		  													
+		  fixture.detectChanges();
+		  expect(el.textContent).toContain('Size: 0.98MB');
+		});
+
+	});
+	
+	
+
+Testing services with dependencies
+
+	import { Http, Response, ResponseOptions } from '@angular/http';
+
+	// handler function to return an angular http response
+	function createResponse(body) {
+	
+	  return Observable.of(
+		new Response(new ResponseOptions({ body: JSON.stringify(body) }))
+	  );
+	}
+
+	class MockHttp {
+	  get() {							// this function serves only one purpose, to
+		return createResponse([]);		// be able to be mocked on several testing functions
+	  }
+	}
+
+	const cartItems = [{ product_id: 1, quantity: 10 }, { product_id: 2, quantity: 5 }];
+
+	describe('StockInventoryService', () => {
+
+	  let service: StockInventoryService;
+	  let http: Http;
+
+	  beforeEach(() => {
+	  
+	  	// testing module configuration
+	  	
+		const bed = TestBed.configureTestingModule({
+		  providers: [
+		    StockInventoryService,
+		    { provide: Http, useClass: MockHttp }	// angular override of its Http client module
+		  ]
+		});
+		
+		http = bed.get(Http);						// retrieving angular providers
+		service = bed.get(StockInventoryService);
+		
+	  });
+
+	  it('should get cart items', () => {
+	  
+		spyOn(http, 'get').and.returnValue(createResponse([...cartItems]));		// method class override 
+
+		// the actual test
+		service.getCartItems()
+		  .subscribe((result) => {
+		  
+		  	// jasmine expects
+		    expect(result.length).toBe(2);
+		    expect(result).toEqual(cartItems);
+		  });
+	  });
+			
+	});			
+			
+			
+Testing component methods
+
+	
+	describe('StockCounterComponent', () => {
+
+	let component: StockCounterComponent;
+	let fixture: ComponentFixture<StockCounterComponent>;
+
+	beforeEach(() => {
+	
+		TestBed.configureTestingModule({
+		  declarations: [
+			StockCounterComponent
+		  ]
+		});
+
+		fixture = TestBed.createComponent(StockCounterComponent);
+		component = fixture.componentInstance;
+		component.value = 0;
+	
+	});
+
+	it('should increment correctly', () => {
+	
+		component.increment()				// component method invocation, it calls our output property
+											// and sets the value
+		expect(component.value).toBe(1);
+	});
+	
+
+	// inputs and outputs testing method 
+	
+	it('should call the output on a value change', () => {
+		
+		// "componet.changed" is the output property		
+		spyOn(component.changed, 'emit').and.callThrough(); // track all calls to it but in addition it will delegate to the actual implementation.
+
+		component.step = 100;		// input
+		component.increment();		
+		
+		expect(component.changed.emit).toHaveBeenCalledWith(100);
+	});
+
+	
+Testing templates
+
+	html
+	
+		<div class="stock-counter">
+		  <div>
+		    <div 
+		      (keydown)="onKeyUp($event)"
+		      (blur)="onBlur($event)"
+		      (focus)="onFocus($event)"
+		      tabindex="0">
+		      
+		      <p>{{ value }}</p>
+		      
+		      <div tabindex="-1">
+		        <button type="button" tabindex="-1" (click)="increment()" [disabled]="value === max">
+		          +
+		        </button>
+		        <button type="button" tabindex="-1" (click)="decrement()" [disabled]="value === min">
+		          -
+		        </button>
+		      </div>
+		      
+		    </div>
+		  </div>
+		</div>
+		
+				
+	ts
+	
+		private onKeyUp(event: KeyboardEvent) {
+		let handlers = {
+		  ArrowDown: () => this.decrement(),
+		  ArrowUp: () => this.increment()
+		};
+
+		if (handlers[event.code]) {
+		  handlers[event.code]();
+		  event.preventDefault();
+		  event.stopPropagation();
+		}
+	  }
+
+
+	spec.ts
+		
+		import { DebugElement } from '@angular/core';
+		import { By } from '@angular/platform-browser';
+	
+		...
+
+		describe('StockCounterComponent', () => {
+
+		  let component: StockCounterComponent;
+		  let fixture: ComponentFixture<StockCounterComponent>;
+		  let el: DebugElement;
+
+		  beforeEach(() => {
+			TestBed.configureTestingModule({
+			  declarations: [
+				StockCounterComponent
+			  ]
+			});
+
+			fixture = TestBed.createComponent(StockCounterComponent);
+			component = fixture.componentInstance;
+			el = fixture.debugElement;
+
+			component.value = 0;
+		  });		  
+
+		  it('should increment when the + button is clicked', () => {
+		  
+		  	// this is how you access elements by their html tag, and trigger an event
+		  	
+			el.query(By.css('button:first-child')).triggerEventHandler('click', null);
+			fixture.detectChanges();
+			expect(component.value).toBe(1);
+		
+			// this is how you access into a native element text content value
+			
+			expect(el.query(By.css('p')).nativeElement.textContent).toBe('1');
+		  });
+
+		  it('should increment the value when the up arrow is pressed', () => {
+		  
+		  	// you may also create your custom event, trigger them manually in the html and pass it down into
+		  	// your function
+		  	
+			const event = new Event('KeyboardEvent') as any;
+			event.code = 'ArrowUp';				
+			el.query(By.css('.stock-counter > div > div')).triggerEventHandler('keydown', event); 	// a query can also be by its css class, 
+																									// and down through our div element
+			
+			fixture.detectChanges();
+			expect(component.value).toBe(1);
+		  });
+
+		});
+
+
+Testing components with services
+
+
+	ts
+	
+		class MockStockInventoryService {
+		...
+		}
+
+		let component: StockInventoryComponent;
+		let fixture: ComponentFixture<StockInventoryComponent>;
+		let el: DebugElement;
+		let service: StockInventoryService;
+
+		beforeEach(() => {
+
+			TestBed.configureTestingModule({
+			  imports: [
+				ReactiveFormsModule
+			  ],
+			  declarations: [
+				StockInventoryComponent						// this component uses components inside him
+				....										// you must declare them also
+			  ],
+			  providers: [
+				{ provide: StockInventoryService, useClass: MockStockInventoryService }
+			  ]
+			});
+
+			fixture = TestBed.createComponent(StockInventoryComponent);
+			component = fixture.componentInstance;
+			el = fixture.debugElement;
+			service = el.injector.get(StockInventoryService);
+
+		});
+
+		it('should get cart items and products on init', () => {
+		
+			// service spying
+			spyOn(service, 'getProducts').and.callThrough();
+			spyOn(service, 'getCartItems').and.callThrough();
+			
+			component.ngOnInit();
+			
+			expect(service.getProducts).toHaveBeenCalled();
+			expect(service.getCartItems).toHaveBeenCalled();
+		});
+
+		it('should create a stock item for each cart item', () => {
+		
+			spyOn(component, 'addStock');
+
+			component.ngOnInit();
+			
+			// method call verifying
+			expect(component.addStock).toHaveBeenCalledWith({ product_id: 1, quantity: 10 });
+			expect(component.addStock).toHaveBeenCalledWith({ product_id: 2, quantity: 5 });
+		});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -7,13 +7,17 @@ export class MyForDirective {
 
   @Input()
   set myForOf(collection) {
-    this.view.clear();
+
+    this.view.clear(); // as this function triggers each time a new
+                       // reference is passed, we need to reset our list 
+
     collection.forEach((item, index) => {
       this.view.createEmbeddedView(this.template, {
         $implicit: item,
         index
       });
     });
+    
   }
 
   constructor(

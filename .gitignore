@@ -26,3 +26,6 @@ npm-debug.log
 # Cache
 .awcache
 settings.json
+
+# Visual Studio Code
+.history

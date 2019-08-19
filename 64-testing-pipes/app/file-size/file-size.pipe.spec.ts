@@ -13,7 +13,7 @@ describe('FileSizePipe', () => {
 
     it('should use the default extension when not supplied', () => {
       expect(pipe.transform(123456789)).toBe('117.74MB');
-      expect(pipe.transform(987654321)).toBe('941.90MB');
+      expect(pipe.transform(987654321)).toBe('942.90MB');
     });
 
     it('should override the extension when supplied', () => {

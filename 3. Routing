@@ -1,0 +1,300 @@
+
+
+
+Routing debugging
+
+	imports: [
+		RouterModule.forRoot(ROUTES, { enableTracing: true })
+	]
+
+
+On navigation end 
+
+	ts (main component debugging)
+
+		constructor(private router: Router) {}
+	
+		  ngOnInit() {
+		  
+		  	// This observable is lazy, it wont execute until an instance of NavigationEnd
+		  	// is provided
+		  	
+			this.router.events
+			  .filter(event => event instanceof NavigationEnd)
+			  .subscribe(event => {
+				console.log(event);
+			  });
+	  	}
+  	
+  	
+Logging instantiated and destroyed components on the router 	
+	
+	html
+	
+		<RouterOutlet
+			(active)="onActivate($event)"
+			(onDeactivate)="onDeactivate($event)">		
+		</RouterOutlet>
+
+	
+	ts
+	
+		onActivate(component) {
+			// console.log(component)
+		}
+		
+		onDeactvate(component) {
+			// console.log(component)
+		}
+		
+Resolver 
+
+	ts (routing configuration)
+	
+		export const ROUTES: Routes = [
+		  {
+			path: 'folder/:name',
+			component: MailFolderComponent,
+			resolve: {
+			  messages: MailFolderResolve
+			}
+		  }
+		];
+		
+
+	ts (a resolver, remember to add this component into the module providers array)
+	
+		@Injectable()
+		export class MailFolderResolve implements Resolve<Mail[]> {
+		
+		  constructor(private mailService: MailService) {}
+		  
+		  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
+			return this.mailService.getFolder(route.params.name);		// accessing the router parameter 'name'
+		  }
+		  
+		}
+		
+	
+	ts (the mail folder component)
+	
+		...
+		
+	  	messages: Observable<{ messages : Mail[] }> = this.route.data; 
+	  	
+		constructor(private route: ActivatedRoute) {}
+		
+		...
+
+
+Auxialiary named outlets
+
+	ts (routing def)
+	
+		export const ROUTES: Routes = [
+		  {
+			path: 'folder/:name',
+			component: MailFolderComponent,
+			resolve: {
+			  messages: MailFolderResolve
+			}
+		  },
+		  {
+			path: 'message/:id',
+			component: MailViewComponent,
+			outlet: 'pane'
+		  }
+		];
+
+	
+	html (set up)
+
+		<router-outlet></router-outlet>	
+		<router-outlet name="pane"></router-outlet>
+		
+		
+	html (navigation)
+	
+		<a 
+		  class="mail-item"
+		  [routerLink]="['', { outlets: { pane: ['message', message.id] } }]" 		// you can route to multiple outlets. The first argument
+		  routerLinkActive="active">												// stands for a relative url path
+		  
+		// the routerLinkActive assigns the class active if this link is active
+		
+
+	ts (javascript api)	
+			
+		this.router.navigate(['', { outlets: { pane: ['message', message.id] } }])		
+
+
+Auxialiary named outlets reset
+
+	<a 
+		[routerLink]="['/mail', { outlets: { primary: 'folder/inbox', pane: null } }]">		// "pane" is a named outlet. everytime we click on this link
+																							// the secondary outlet will reset its values
+																					
+																					
+Outlet navigation recap
+
+	<a [routerLink]="folder/inbox">
+	<a [routerLink]="[{ outlets: { primary: 'folder/inbox', pane: null } }]">																						
+	<a [routerLink]="['', { outlets: { pane: ['message', message.id] } }]">
+
+	// the first argument (as an string and not an object) may or may not be preceded by an slash ; an slash marks the routing as an absolute route.  
+	// each array element represents a level in the routing def
+
+
+Lazy loading (loading modules on demand)
+
+	let routes = [
+		{ path: "lazyModule", loadChildren: './path/fileName.module#ClassName'}
+	]
+
+
+Preloading lazy modules (async loading)
+
+	// all  modules config
+	imports: [
+		... 
+		RouterModule.forRoot(ROUTES, {preloadingStrategy: PreloadAllModules})
+	] 
+
+
+	// custom modules config
+	
+
+Custom preload
+
+	export class CustomPreload implements PreoloadingStrategy {
+
+		preload(route: Route, fn: () => Observable<any>): Observable<any> {
+			return route.data && route.data.preload ? fn() : Observable.of(null);		// preload is our custom variable
+	  	}																				// you can implement your own properties with complex logic	
+	}
+	
+	...
+
+	let routes = [
+		{ path: "lazyModule", data: {preload: true}, loadChildren: './path/fileName.module#ClassName'}
+	]
+
+	...	
+    providers: [CustomPreload],
+	... 
+
+
+Can load (loading rules to draw exclusively lazy loaded modules)
+
+	ts (remember to add this class into the providers module)
+	
+		@Injectable()
+		export class AuthGuard implements CanLoad {
+		
+		  constructor(private authService: AuthService) {}
+		  canLoad() {
+			return this.authService.checkPermissions();
+		  }
+		}
+	
+	ts (routes)
+	
+		export const ROUTES: Routes = [
+		  { path: 'dashboard', canLoad: [AuthGuard], loadChildren: './dashboard/dashboard.module#DashboardModule' },
+		  { path: '**', redirectTo: 'mail/folder/inbox' }
+		];
+
+
+Can activate (loading rules to draw exclusively any route definitions)	
+
+	ts	
+	
+		@Injectable()
+		export class AuthGuard implements CanActivate {
+	
+		  constructor(private authService: AuthService) {}
+		  
+		  canActivate() {
+			return this.authService.isLoggedIn();
+		  }
+		}
+	
+	
+	ts
+	
+		export const ROUTES: Routes = [
+	  	{
+			path: 'mail',
+			component: MailAppComponent,
+			canActivate: [AuthGuard],
+			children: [	... ]				// child components and this component, are blocked
+		}
+
+	
+/* NOTE: "can activate" and "can load" have 2 arguments, one of them is the ActivatedSnapshotRoute, which you can use for
+complex implementations of authentication mechanisms */
+
+
+Can activate child
+
+	// can activate child protects the access to the children components but not the component itself
+
+	ts
+
+		@Injectable()
+		export class AuthGuard implements CanLoad, CanActivate, CanActivateChild {
+		 
+		  constructor(private authService: AuthService) {}
+		 
+		  canActivateChild() {
+			return false;
+		  }
+		}
+
+	ts
+	
+		export const ROUTES: Routes = [
+		  {
+			path: 'mail',
+			component: MailAppComponent,
+			canActivateChild: [AuthGuard],
+			children: [ ... ]
+		  }
+		];
+
+
+Can Deactivate
+
+	
+	ts
+
+		@Injectable()
+		export class MailViewGuard implements CanDeactivate<MailViewComponent> {  // Component type must have the same type in the route variable
+		  canDeactivate(component: MailViewComponent) {
+			if (component.hasUnsavedChanges) {
+			  return window.confirm('Are you sure you want to leave?');
+			}
+			return true;
+		  }
+		}
+		
+	
+	ts (routes property)	
+	
+    	canDeactivate: [MailViewGuard],
+
+	
+		
+	
+
+Accesing the route params
+
+	constructor(private route: ActivatedRoute) {}
+
+	ngOnInit() {
+		this.route.params.subscribe(() => {
+			....
+		});
+	}	
+
+

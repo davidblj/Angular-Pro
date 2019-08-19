@@ -1,0 +1,960 @@
+
+
+50 Discount : ULTIMATE_CO
+
+Current: 294
+
+	html
+	
+		use navs for navigation
+		use a for links
+		use p for text
+		use h1, h2 ... for titles
+		use ul for lists
+
+
+	Some guidelines
+	
+		resolvers are put under the component we want to resolve
+		guards are punt under the components they are trying to guard		
+		services are put under the folder called "services" 
+		interfaces are put under a folder named "models" on each module
+		the main entry point of a module might be or might not be a container component
+		use a module for the authentication, and place the authentication guard in there
+		spec files are put alongside whatever they are testing
+		
+
+	Documentation spec
+
+	expression<Type> ~ an expression that returns a "Type" instance
+	
+		An expression can access a property (of type Type)
+		An expression can be a piece of code (that evaluates to an instance of type Type)
+		An expression can be a method invocation (that returns an instance of type Type) 
+
+	"#propertieName" creates and instances a property. This property can be then used as an expression argument
+
+
+	
+Binding
+
+	<tag
+		*ngFor="for expression"
+		[input]="tsObject"
+		(output) = "expression<void>"
+		(event)="expression<void>"	
+	></tag>
+
+
+Properties
+
+	propertieName = value, checked (input tag), src (image tag)
+
+	<tag 
+		[propertieName]="expression<value>" 
+		propertieName="{{expression<value>}}"	
+	></tag>
+
+
+
+Styling
+
+	remember that (x)="value" is not equal to (x)="'value'". The first one is a axpression (a property)
+	while the latter is a fixed value. An alternative example could be:
+		(x) = "{key: pair}" ~ (x) = "propertyObject"
+
+	<tag 
+		(style.property.[unit])="expression<String>" 
+		[ngStyle]="{className: expression<value>, [, className2: expression<value>]}"
+		[ngStyle]="expression<Object>"
+	></tag>
+
+
+Display
+
+	css 
+		className: value
+		
+	html
+
+		<tag
+			[class.className]="expression<Boolean>"
+			[ngClass]="{className: expression<Boolean>, [, className2: expression<boolean>]}"
+			[ngClass]="expression<Object>"
+			[ngClass]="expression< Array<String> >"
+		></tag>
+
+<tag> {{ expression<Value> }} </tag>
+
+
+forms
+
+	Input selector
+
+		<input value="testing" #input/>
+
+
+	form control
+	
+		ts
+			nameControl = new FormControl("Nate");		
+			
+		html
+		
+			<input type="text" [formControl]="nameControl" />
+		
+			
+	Implicit forms
+	
+		html
+	
+			<!-- NgModel creates a new FormControl that is automatically added to 
+				 the parent FormGroup.Thi is a directive -->
+			
+			<form #form="ngForm" 
+				  (ngSubmit)="onSubmit(form.value)">
+				  
+				<input name="testing" ngModel>
+			</form>	
+		
+		ts
+		
+			onSubmit(form: any): void {
+				console.log('you submitted:', form);
+				// form.testing
+			}
+		
+		
+	Form Groups and Arrays
+	
+		html
+	
+			<form [formGroup] = "form">
+						
+				<!-- form groups -->		
+				<div formGroupName = "store">
+					<input formControlName = "branch">					
+					<input formControlName = "code">
+				</div>		
+				
+				<!-- form arrays -->
+				<div formArrayName = "products">
+					<div *ngFor="let item of items; let i = index">	
+									
+						<div [formGroupName]="i">						
+							<label>{{item.value.name}}</label>							
+							<!-- direct access to the product Id property -->
+							<input formControlName = "quantity">							
+						</div>
+						
+					</div>
+				</div>			
+				
+			</form>
+	
+	ts
+		
+		form: FormGroup
+		
+		...
+		
+		constructor(private fb: FormBuilder) { }
+	
+		this.form = new FormGroup({
+			store: new FormGroup({
+			  branch: new FormControl('B182'),
+			  code: new FormControl('1234')
+			}), 
+			location: new FormControl('')
+			products: new FormArray([
+				{
+					quantity: new FormControl('')
+				}
+			])
+		})	
+		
+		ngOnInit() {
+			
+			// value change subscription
+			this.form.get('products').valueChanges.subscribe((value) => {
+				// logic
+			})
+		}
+		
+		// using form builders
+		
+		this.form = this.fb.formGroup({
+		
+			store: new FormGroup({
+			  branch: '',
+			  code: ''
+			}),
+			location: '',
+			products: this.fb.array()
+		})
+		
+		get items() {
+			return (this.form.get('products') as FormArray).controls			
+		}
+		
+		add(product) {
+			let control = this.form.get('products') as FormArray
+			control.push(product		)
+		}
+		
+		remove(index) {
+			let control = this.form.get('products') as FormArray
+			control.removeAt(index)
+		}		
+		
+		update() {
+		
+		
+			// used to set all of the form properties. The form state is not resetted
+			
+			this.form.setValue({})
+
+			// used to set one or more properties, but not the whole form group. The form state is not resetted			
+			
+			this.form.patchValue({})
+
+			// This function reset the control and form state. The whole object must be provided.		
+			
+			this.form.reset({ 
+				...
+			})
+		}
+		
+   
+
+   Value accesor
+
+   use the value accesor as an alternative to components that handle form control values.
+   
+   
+   html (of the parent component)
+   
+	   	<div formControlGroup="formControl">	
+	   		<angularComponent										// note that formControlName is not an input property in our
+	   			formControlName="controlName">						// component
+	   		<angularComponent/>
+		<div>
+   
+   ts   	   	
+   
+	   	const COUNTER_CONTROL_ACCESSOR = {
+		  provide: NG_VALUE_ACCESSOR,
+		  useExisting: forwardRef(() => StockCounterComponent),		// class hoisting, do note that at this point, 
+																	// the class has not been declared yet
+		  multi: true												// ng value accessor extension
+		};
+	
+		...
+	
+		@Component({
+		  providers: [COUNTER_CONTROL_ACCESSOR],
+		  ...
+		})		  
+		export class StockCounterComponent implements ControlValueAccessor {
+	
+		  private onTouch: Function;
+		  private onModelChange: Function;
+
+		  registerOnTouched(fn) {
+			this.onTouch = fn;
+		  }
+		  
+		  registerOnChange(fn) {
+			this.onModelChange = fn;
+		  }
+		  
+		  writeValue(value) {
+			this.value = value || 0;
+		  }
+		  
+		  setValue(value) {
+		    this.onModelChange(this.value);		// set value	
+		    this.onTouch();						// notify onTouch property changes
+		  }
+		}
+			
+		  		  
+   Form Group Error handling
+   
+	   	<div *ngIf="formControlProperty.valid">
+		<div *ngIf="formControlProperty.hasError('name')">
+		
+		<div *ngIf="formProperty.get('name').valid">
+		<div *ngIf="formProperty.hasError('required', 'name')">			
+		<div *ngIf="formProperty.controls['name'].valid">
+
+		<div [class.customClass]="formControlProperty.valid | ...">
+		
+		
+		
+	Form group default validations
+	
+		form = this.fb.group({
+			store: this.fb.group({
+			  branch: ['', Validators.required],	// validations declared here
+			  code: ['', Validators.required]
+			}),
+			selector: this.createStock({}),
+			stock: this.fb.array([])
+	  	})
+	  	 
+	  	 
+	  	 
+ 	Form control custom validators 	
+ 	
+ 	ts
+ 	
+ 		export class StockValidators {
+		  static checkBranch(control: AbstractControl) {
+			const regexp = /^[a-z]\d{3}$/i;
+			const valid = regexp.test(control.value);
+			return valid ? null : { invalidBranch: true };
+		  }
+		} 
+		
+	ts
+	
+		get invalid() {
+			return (
+			  this.parent.get('store.branch').hasError('invalidBranch') &&
+			  this.parent.get('store.branch').dirty && 
+			  !this.required('branch')		// this validation wont trigger if nothing has been yet typed
+			);
+		}
+			
+		
+	Form group validator
+	
+		ts (the validator)
+	
+	
+			static checkStockExists(control: AbstractControl) {
+		
+				const stockItem = control.get('stock');
+				const selector = control.get('selector');
+
+				if (!(stockItem && selector)) return null;		// safety check
+
+				const exists = stockItem.value.some((stock) => {
+				  return stock.product_id === parseInt(selector.value.product_id, 10);
+				});
+
+				return exists ? { stockExists: true } : null;
+		  	}
+		  	
+		  	
+	  	ts (the component that will check that its parent form has errors)
+	  	
+	  		return (
+			  this.parent.hasError('stockExists') &&
+			  this.parent.get('selector.product_id').dirty
+			);
+		
+
+		ts (the parent form configuration)
+	
+			form = this.fb.group({
+				selector: this.createStock({}),
+				stock: this.fb.array([])
+			}, { validator: StockValidators.checkStockExists }); 	// form validator
+		
+		
+	
+	Async validator	
+	
+		ts (validator)
+	
+			  checkBranchId(id: string): Observable<boolean> {
+			  	...
+			  }
+	   	
+	   	ts (the form group)
+	   	
+	   	
+		   	form = this.fb.group({
+				store: this.fb.group({
+			  	branch: [
+					'',
+					[Validators.required, StockValidators.checkBranch],
+					[this.validateBranch.bind(this)]				// you need to bind 'this' class into the function		
+				],
+			  	code: ['', Validators.required]
+				})
+			});
+		
+			validateBranch(control: AbstractControl) : Observable<Any> {
+			
+				// this no longer refers to this 'array', but this branch
+				return this.stockService
+					  .checkBranchId(control.value)
+					  .map((response: boolean) => response ? null : { unknownBranch: true });
+		  	}
+  
+  
+Routing
+
+
+	Simple routing 
+
+		ngModule
+
+			const routes: Routes = [
+				{ path: 'home', component: HomeComponent }
+			]
+	
+			RouterModule.forRoot(routes),
+
+		navigation through the html
+		
+		  <a [routerLink]="['/home']">Home</a>
+		  <a [routerLink]="['/home', 'optionalNestedRoute']">Home/NestedRoute</a>	<!-- with nesting -->	 		  
+
+	
+	If you are going to use a route parameter (), use instead
+	
+	
+		ngModule
+		
+			{ path: 'product/:id', component: Component }, 
+			
+		
+		navigation through the html 
+	
+		    <a [routerLink]="['/product', expresssion<string|number>]">product-X</a>
+		    
+				
+		navigation through the ts file
+		
+			private router: Router	// injection 
+			private route: ActivatedRoute // injection
+		    
+		    this.router.navigate(['/', expresssion<string|number>]);
+		    this.router.navigate(['./', expresssion<string|number>], {relativeTo: this.route});  // with nesting
+
+
+		information retrieval of the url		
+					
+			constructor(private route: ActivatedRoute) {
+   				 route.params.subscribe(params => { this.propertyVariable = params['routeParameter']; });
+			}
+			
+					
+	
+	As for a query parameter (a url of the form: ?param1=value1&param2=value2)  <- needs refactoring 
+	
+	
+		ngModule (route is untouched)	
+	
+			...
+			{ path: 'product/', component: ProductComponent },
+			...		
+		
+		
+		navigation through the ts
+		
+		
+			private router: Router	// injection 
+		
+			this.router.navigate(['search'], { queryParams: { paramKey: paramValue } })
+		      .then( .... );
+		
+		
+		information retrieval of the url 		
+	
+			constructor(private route: ActivatedRoute) {
+				this.route.params.subscribe(params => { this.propertyVariable = params['paraValue']; });
+			}
+	
+	
+	Going back
+	
+		constructor(private location: Location) { ... }
+	
+		...  this.location.back(); 
+		
+	
+
+Template reference variables
+
+		<div>
+		  <input type="file" #file (change)="onChange(file.files)"/>
+		</div>
+    
+    Or we can access this variable with "ViewChild"
+    
+		@ViewChild('file') variableName;
+		...
+		variableName.files
+    
+    You can also declare them, assign a property to it, and re-use this value through the
+    reference variable
+    
+		<input type="text" #newquery
+		[value]="query"
+		(keydown.enter)="submit(newquery.value)">
+	
+
+HTML events
+    
+	
+	HTML events are handled as follows:	
+	    
+    html 
+    
+		<div>
+		  <input type="file" (change)="onChange($event)"/>
+		</div>	
+    
+    ts
+    
+		onChange(event) {
+			event.target.files
+		}
+		
+		
+	This is a list of examples:
+	
+		<input type="checkbox" (change)="onChecked($event.target.checked)">		
+		onChecked(value: boolean) { ... }	
+		
+
+ngOnChanges
+
+	onChanges(changes: SimpleChanges) {
+	
+		if (changes.property) {
+			changers.property.currentValue;
+		}
+	}
+		
+		
+Events
+
+
+	Output Events
+	
+		...
+	
+		@Output
+		submitted<LogInCredentials> = new EventEmitter<LogInCredentials>()
+	
+		...
+	
+		<app-component
+			(submitted)=(logInUser($output))>	
+		<\app-component>
+	
+	
+	Input Events
+	
+		[under construction]
+		
+	
+ng-content selectors
+
+	<ng-content select="component"></ng-content>
+	<ng-content select=".css-class"></ng-content>		
+	<ng-content select="#html-id"></ng-content>	
+	
+
+@ContentChild
+
+	// you can subscribe to projected component output event like this
+	// usefull for: 
+	
+	parent component
+
+		<ContentChildComponent>
+			<Component></Component>
+		</ContentChildComponent>
+	
+	html
+
+		...
+		
+		<ng content select="component"></ng-content>
+	
+	ts	
+	
+		@ContentChild(Component) component : Component;						
+	
+		@ngAfterContentInit() {
+	
+			if (this.component) {			
+				this.component.outputEvent.subscribe((outputVariable) => { // component logic })	
+			}	
+		}
+	
+	
+@ContentChildren
+	
+	parent component
+
+		<ContentChildComponent>
+			<Component></Component>
+			<Component></Component>
+			<Component></Component>
+		</ContentChildComponent>
+	
+	html
+	
+		...
+	
+		<ng-content select="component"></ng-content>
+	
+	
+	ts
+		
+		@ContentChildren(Component) component : QueryList<Component>
+		
+		@ngAfterContentInit() {
+	
+			if (this.component) {			
+		
+				this.component.forEach(elementComponent => { 			
+					elementComponent.outputEvent.subscribe((outputVariable) => { // component logic })	
+				})
+			}	
+		}	
+		
+
+
+@ViewChild
+		
+	
+	// you can query for non projected components, (elements on this component)
+		
+	html 
+	
+		<Component><Component>
+		
+	ts
+	
+		@viewChild(Component) component : Component;						
+	
+		@ngAfterViewInit() {
+			// do potential subscriptions, but no property changes
+		}
+	
+		@ngAfterContentInit() {
+			component.property = 'some value'		
+		}	
+		
+
+@ViewChildren
+				
+	html 
+	
+		<Component><Component>
+		<Component><Component>
+		<Component><Component>
+		
+	ts
+	
+		@viewChildren(Component) name : QueryList<Component>;
+		
+		constructor(private cd: ChangeDetectorRef) {}						
+	
+		@ngAfterViewInit() {
+
+			if (this.name) {
+			  this.name.forEach((message) => {
+				message.days = 30;
+			  });
+			  this.cd.detectChanges();	// change detection error fix
+			}
+		}
+	
+		@ngAfterContentInit() {
+			
+			// property changes are not available on this hook as this is a 'live' query list.			
+		}					
+		
+		
+@ViewChild and template refs
+
+
+	html 	
+	
+		<div #element>'text'</div
+	
+		
+	ts
+	
+		@viewChild('element') name : ElementRef
+		
+		constructor(private cd: ChangeDetectorRef) {}						
+	
+		@ngAfterViewInit() {
+			let nativeElement = this.name.nativeElement
+		}
+	
+		@ngAfterContentInit() {
+			... 	
+		}
+		
+		
+Native element property manipulation (not platform safe, built for the web)
+
+	Common attributes    
+		this.elementRefProperty.nativeElement.setAttribute('placeholder', 'Enter your email address');
+		this.elementRefProperty.nativeElement.focus();
+
+	Inputs
+	    this.elementRefProperty.nativeElement.classList.add('email');
+	
+	
+Agnostic Native element property manipulation
+	
+	constructor(private renderer: Renderer)	
+		
+	this.renderer.setElementAttribute(this.elementRefProperty.nativeElement, 'placeholder', 'Enter your email address');
+    this.renderer.setElementClass(this.elementRefProperty.nativeElement, 'email', true);
+    this.renderer.invokeElementMethod(this.elementRefProperty.nativeElement, 'focus');
+		
+		
+Injecting Dynamic Components
+
+	html
+
+		<div #entry></div>
+
+	ts
+	
+ 		// remember to add this component into the entry components property module
+	
+		@ViewChild('entry', { read: ViewContainerRef }) entry: ViewContainerRef;
+		
+		component: ComponentRef<Component>
+	
+		constructor(private resolver: ComponentFactoryResolver) {}		
+	
+		ngAfterContentInit() {
+		
+			const componentFactory = this.resolver.resolveComponentFactory(Component);			
+			this.component = this.elementRefProperty.createComponent(componentFactory);
+			this.component = this.elementRefProperty.createComponent(componentFactory, 0); // component creation with specific ordering
+			
+			this.component.instance.properties;	// a property can be either an input, or class variables
+			this.component.instance.outputEvent.subscribe((outputElement) => { ... component logic ... 	});
+		}
+
+		destroyComponent() {
+			this.component.destroy();		
+		}
+		
+		moveComponent() {
+			this.entry.move(this.component.hostView, 1)	// dynamic component reordering
+		}
+		
+
+Templates and context
+	
+	html
+	
+        <div #entry></div>
+		<ng-template #tmpl let-name let-location="location">
+	        {{ name }} : {{ location }}
+      	</ng-template>
+	
+	ts
+
+		@ViewChild('entry', { read: ViewContainerRef }) entry: ViewContainerRef;
+		@ViewChild('tmpl') tmpl: TemplateRef<any>;
+
+		ngAfterContentInit() {
+		
+			this.entry.createEmbeddedView(this.tmpl, {
+				$implicit: 'Todd Motto',
+		  		location: 'UK, England'
+    		});
+		}
+
+
+	You may inject a template without the need of an en entry. No extra dom elements need to be
+	generated like in the previous example:
+	
+	
+	html
+
+		<ng-container
+		  [ngTemplateOutlet]="tmpl"
+		  [ngTemplateOutletContext]="context">
+		</ng-container>
+		
+    	<template #tmpl>
+        	{name} : {location}
+	    </template>
+    
+    ts
+    
+    	context = { 
+    		$implicit: 'Todd Motto',
+    		location: 'UK'
+    	}
+    
+    
+On push change detection: remember to combine them with presentational and stateless components.
+On push strategy is more performant, dom elements are refreshed only when a new reference is pass
+down to a component. Remember that property changes wont make a refresh on the page. 
+
+
+	// ... in the component decorators
+	changeDetection: ChangeDetectionStrategy.OnPush,	
+
+
+Directives: HostListener, HostBinding, export as
+		
+		
+clever usages: listening for an input change, to higlight the entire input element if whats being typed
+			   does not match a certain criteria	
+	
+	A hostBinding property targets any property (that includes any property you can think of to set into an html tag)
+	A hostListener targets html events (html events ~ https://developer.mozilla.org/en-US/docs/Web/Events)
+			
+	html // directive usage
+	
+		<input	
+			placeholder = "some placeholder"
+			directiveElement
+			directiveElement = "expression<any>">			
+		</input>
+	
+
+		<!-- manual directuve event trigger -->		
+		
+		<input	
+			directiveElement			
+			#directiveElement = "directiveElement">			
+		</input>
+		
+		<div 
+			(mouseover)="directiveElement.directiveMethod()">
+		</div>
+	
+	ts
+
+		@Directive({
+			selector: "[directiveElement][secondInput]"
+			exportAs: "directiveElement"
+		})
+		export class directiveElement() {
+		
+
+			// You can dinamycally set or unset a css property by definining new classes
+			// or setting properties directly
+			
+			@HostBinding('style.cssProperty') 						// border, margin, padding, ...
+			property : String				
+			
+			@HostBinding('class') classes = 'class1 class2 class3'  // css classes
+			
+			@HostListener('eventName', ['$event'])	
+			onInput(event) {
+			
+				// var target = event.target as ... [HTMLInputElement]				
+												
+			}
+	
+			constructor(
+				private component: ElementRef,			// this element reference, the host element
+				private view: ViewContainerRef,			// a container ref automatically created on this directive host element
+				private template: TemplateRef<any> ) {	// a template, take a look at the lecture #26, this template is available
+														// if you assign this directive into a template		
+			}
+			
+			@Input
+			set directiveElement(value) {				// defualt input value
+				// ...
+			}
+			
+			@Input
+			set secondInput(value) {					// the second input must be specified this way, named after this directive
+														// second selector (in the decorator configuration) 
+			}
+			
+			directiveMethod() {
+				// ...
+			}
+			
+		}
+		    
+
+Custom pipes
+
+
+	html
+	
+		<div>
+			{{ variable | pipeName = 'argument':'extensionValue'}}
+		</div>
+
+	ts
+	
+		@Pipe({
+			name: 'pipeName'	
+		})
+		export class customPipe() implements PipeTransform {
+			
+			variable = 'Some value'
+			
+			transform(value: String, extension: String) {
+				return value + extension
+			}
+		}
+		
+Pipes as providers: pipes used in code, rather than HTML
+
+		
+	@Component({
+		...
+		provider: PipeComponent
+	})		
+	export class ComponentElement() {
+	
+		constructor(private pipe: PipeComponent)
+	
+		fn() {
+			this.pipe.transform(value, extension)
+		}
+	}
+	
+	
+Async pipes
+
+
+	html
+		
+		<mail-item
+		  *ngFor="let message of (messages | async)"
+		  [message]="message">
+		</mail-item>	
+    
+	ts
+	
+		messages: Observable<Mail[]> = this.route.data.pluck('messages');    
+    
+    	
+	You may enclose the async pipe to access into the observable properties
+	
+		
+		{{ (observable | async).property }}
+		
+	
+		
+	
+	
+	
+	
+	
+	
+	
+				
+		
+		
+		

@@ -1,0 +1,34 @@
+
+
+
+http request
+
+	checkBranchId(id: string): Observable<boolean> {
+		
+		let search = new URLSearchParams();							// url parameters
+		search.set('id', id);
+		
+		return this.http
+		  .get('/api/branches', { search })
+		  .map((response: Response) => response.json())				// unncessary mapping as of the new http library
+		  .map((response: any[]) => !!response.length)
+		  .catch((error: any) => Observable.throw(error.json())); 	// error catching
+  	}
+
+Fork Join
+
+	Join two observables and resolve them as arrays: 1 result comes in
+	the first array, and second result comes in the second array. 
+	
+		Observable.
+		forkJoin(obs1, obs2).
+		map(([array1, array2]) => { })
+
+Pluck
+
+
+	Extractar una variable, y convertir el observable exclusivamente al tipo de esa variable
+	
+		property: Observable<PropertyType> = observableVariable.pluck('resultingObjectPropertyName');
+		
+	

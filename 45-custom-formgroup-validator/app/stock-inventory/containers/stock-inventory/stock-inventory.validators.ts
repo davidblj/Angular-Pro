@@ -17,6 +17,5 @@ export class StockValidators {
     });
 
     return exists ? { stockExists: true } : null;
-
   }
 }

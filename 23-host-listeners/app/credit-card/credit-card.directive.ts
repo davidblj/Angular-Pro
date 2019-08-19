@@ -4,6 +4,7 @@ import { Directive, HostListener, ElementRef } from '@angular/core';
   selector: '[credit-card]'
 })
 export class CreditCardDirective {
+  
   @HostListener('input', ['$event'])
   onKeyDown(event: KeyboardEvent) {
     const input = event.target as HTMLInputElement;
@@ -19,6 +20,5 @@ export class CreditCardDirective {
     }
 
     input.value = numbers.join(' ');
-
   }
 }

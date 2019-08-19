@@ -9,6 +9,7 @@ import { Product } from '../../models/product.interface';
   template: `
     <div class="stock-selector" [formGroup]="parent">
       <div formGroupName="selector">
+        
         <select formControlName="product_id">
           <option value="">Select stock</option>
           <option
@@ -17,6 +18,7 @@ import { Product } from '../../models/product.interface';
             {{ product.name }}
           </option>
         </select>
+
         <input 
           type="number"
           step="10"

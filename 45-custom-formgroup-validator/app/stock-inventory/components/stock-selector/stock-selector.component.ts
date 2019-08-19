@@ -9,7 +9,8 @@ import { Product } from '../../models/product.interface';
   template: `
     <div class="stock-selector" [formGroup]="parent">
       <div formGroupName="selector">
-        <select formControlName="product_id">
+        
+      <select formControlName="product_id">
           <option value="">Select stock</option>
           <option
             *ngFor="let product of products"
@@ -17,6 +18,7 @@ import { Product } from '../../models/product.interface';
             {{ product.name }}
           </option>
         </select>
+
         <stock-counter
           [step]="10"
           [min]="10"
@@ -29,6 +31,7 @@ import { Product } from '../../models/product.interface';
           (click)="onAdd()">
           Add stock
         </button>
+        
         <div
           class="stock-selector__error"
           *ngIf="stockExists">
