@@ -13,6 +13,7 @@ import { StockInventoryService } from '../../services/stock-inventory.service';
 
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
+import { Item, Product } from '../../models/product.interface';
 
 TestBed.initTestEnvironment(
   BrowserDynamicTestingModule,
@@ -20,10 +21,10 @@ TestBed.initTestEnvironment(
 );
 
 class MockStockInventoryService {
-  getProducts() {
+  getProducts() : Observable<Item[]> {
     return Observable.of([{ id: 1, price: 10, name: 'Test' }, { id: 2, price: 100, name: 'Another test'}]);
   }
-  getCartItems() {
+  getCartItems() : Observable<Product[]> {
     return Observable.of([{ product_id: 1, quantity: 10 }, { product_id: 2, quantity: 5 }]);
   }
 }
@@ -59,8 +60,8 @@ describe('StockInventoryComponent', () => {
   });
 
   it('should get cart items and products on init', () => {
-    spyOn(service, 'getProducts').and.callThrough();
-    spyOn(service, 'getCartItems').and.callThrough();
+    spyOn(service, 'getProducts');
+    spyOn(service, 'getCartItems');
     component.ngOnInit();
     expect(service.getProducts).toHaveBeenCalled();
     expect(service.getCartItems).toHaveBeenCalled();

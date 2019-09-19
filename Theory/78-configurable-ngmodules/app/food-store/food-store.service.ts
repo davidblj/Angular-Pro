@@ -7,6 +7,7 @@ import { FOOD_STORE_CONFIG, FoodStoreConfig } from './config';
 
 @Injectable()
 export class FoodStoreService {
+  
   constructor(
     private http: Http,
     @Inject(FOOD_STORE_CONFIG) private config: FoodStoreConfig

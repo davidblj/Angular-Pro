@@ -16,6 +16,7 @@ export const FOOD_PROVIDERS: Provider[] = [
   ]
 })
 export class FoodStoreModule {
+  
   static forRoot(config: FoodStoreConfig): ModuleWithProviders {
     return {
       ngModule: FoodStoreModule,

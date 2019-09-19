@@ -1,13 +1,14 @@
 import { Observable } from 'rxjs/Observable';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+
 import 'rxjs/add/operator/pluck';
 import 'rxjs/add/operator/distinctUntilChanged';
 
-import { State } from './state';
+export interface State {
+  [key: string]: any
+}
 
-const state: State = {
-  playlist: undefined
-};
+const state: State = {};
 
 export class Store {
 
@@ -23,9 +24,7 @@ export class Store {
   }
 
   set(name: string, state: any) {
-    this.subject.next({
-      ...this.value, [name]: state
-    });
+    this.subject.next({ ...this.value, [name]: state });
   }
 
 }
