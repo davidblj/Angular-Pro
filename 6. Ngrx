@@ -1,0 +1,203 @@
+
+// Before you begin, take a look at the store pattern layed up in 'Store state management.png'. 
+
+Custom Store (set up)
+
+	export class Store {
+
+	  // we use a behaviour subject as we need an initial value, which in this case
+	  // is an empty object. A subject may serve the same purpose, but it does not
+	  // receive an initial value. 
+	  
+	  // a subject is used to pass down the latest streamed value to any
+	  // new subscriptor
+  
+	  private subject = new BehaviorSubject<State>(state);
+
+	  // Our subject is then converted into an observable to access
+	  // its values. This store is to whom you subscribe and its who
+	  // reacts to any value that is set to our subject 
+	  
+	  // remember, we set values to our subject, we listen for changes in the store 
+	  
+	  private store = this.subject.asObservable().distinctUntilChanged();
+
+	  get value() {
+		return this.subject.value;
+	  }
+
+	  select<T>(name: string): Observable<T> {
+
+		// pluck extracts an object property of the stream, and creates
+		// a new observable of the property type and not the entire object
+		
+		return this.store.pluck(name);
+	  }
+
+	  set(name: string, state: any) {
+		
+		// Setting our store the state. Do note that we are passing a new
+		// object. This new object is composed of the subject value, and 
+		// a new property, this is how we manage the 'state'
+		 
+		this.subject.next({
+
+		  // the spread operator merge an object properties, into 'this' object
+		  ...this.value, [name]: state
+		});
+	  }
+
+	}	
+
+
+Store service
+
+	... 
+	
+	// class variable
+	getPlaylist$ = this.http
+    .get('/api/playlist')
+    .map(res => res.json())
+    .do(next => this.store.set('playlist', next));		// once a component is subscribed, 
+    													// it will automatically set the store values
+    													// This is how initially we set up an state
+        
+    ...            
+    
+    	TODO: ...    	
+    	
+	// in the following snippet, one component is shown. it does not actually mutate anything, it just
+	// sets up the initial data load.
+	
+	// in '85-outputs-to-service' you see 3 types of components. The stateless component
+	// through its output notifies a change to its container component. This component (s), in turn,
+	// call the service. The service, once it fetch the information, its going to mutate the
+	// store
+    
+    // store mutation    
+    toggle(event: any) {
+    
+    	this.http
+		  .put(`/api/playlist/${event.track.id}`, event.track)
+		  .map(res => res.json())
+		  .subscribe((track: Song) => {
+		    
+		    const value = this.store.value.playlist;
+
+		    const playlist = value.map((song: Song) => {
+		      if (event.track.id === song.id) {
+		        return { ...song, ...event.track };
+		      } else {
+		        return song;
+		      }
+		    });
+
+		    this.store.set('playlist', playlist);	// state mutation
+
+		  });
+  	 }
+
+Component (DATA SET UP)
+    
+    ts 
+    
+		playlist$: Observable<any[]>;
+		subscription: Subscription;
+
+		constructor(
+			private store: Store,
+			private songsService: SongsService
+		) {}
+
+		ngOnInit() {
+
+			// this is how you subscribe into the store		
+			this.playlist$ = this.store.select('playlist');
+	
+			// but, at this point, the store is empty because we havent called the
+			// service. We must subscribe to the service for the store to start
+			// streaming values, this is the 'initial data load'
+			this.subscription = this.songsService.getPlaylist$.subscribe();
+		}    
+
+		ngOnDestroy() {
+
+			// remember to unsubscribe from the store		
+			this.subscription.unsubscribe();
+		}
+
+	html
+	
+		<div class="songs">
+			<div *ngFor="let item of playlist$ | async">
+				{{ item.artist }}
+				{{ item.track }}
+			</div>
+		</div>
+
+
+Component (DATA LISTENING AND STORE MUTATION)
+
+	// and like in the previous component, we are just going to listen for changes, but we also might
+	// change the state through an output component. Do note that we are going to receive values
+	// right when the initialization completes. 
+	
+	ts
+	
+		constructor(
+			private store: Store,
+			private songsService: SongsService
+		) {}
+
+		ngOnInit() {
+			
+			// data hook up
+			this.favourites$ = this.store.select('playlist')
+			  .filter(Boolean)
+			  .map(playlist => playlist.filter(track => track.favourite));
+		}
+		
+		// data mutation
+		onToggle(event) {
+			this.songsService.toggle(event);
+		}
+
+	html 
+	
+		<div class="songs">
+		  <songs-list
+		    [list]="favourites$ | async"
+		    (toggle)="onToggle($event)">
+		    Favourites
+		  </songs-list>
+    	</div>
+
+
+// The previous components are containers, they inject services. Stateless components
+// won't change the state directly, but through an output property (like in the song-list)
+// and likewise, they will receive the app state through an input property. 
+
+// Its imperative for stateless components to have their changeDetectionStrategy 'on push'
+
+
+	@Component({
+	  selector: 'songs-list',
+	  changeDetection: ChangeDetectionStrategy.OnPush,
+	  styleUrls: ['songs-list.component.scss'],
+	  template: `
+	  ...
+	})
+
+
+
+
+
+
+
+
+
+
+
+
+
+

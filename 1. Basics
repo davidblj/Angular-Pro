@@ -59,12 +59,13 @@ Properties
 
 Styling
 
-	remember that (x)="value" is not equal to (x)="'value'". The first one is a axpression (a property)
+	remember that (x)="value" is not equal to (x)="'value'". The former is an axpression (a property)
 	while the latter is a fixed value. An alternative example could be:
 		(x) = "{key: pair}" ~ (x) = "propertyObject"
 
-	<tag 
+	<tag 			
 		(style.property.[unit])="expression<String>" 
+		[class.className]="expression<Boolean>"
 		[ngStyle]="{className: expression<value>, [, className2: expression<value>]}"
 		[ngStyle]="expression<Object>"
 	></tag>
@@ -132,12 +133,14 @@ forms
 			<form [formGroup] = "form">
 						
 				<!-- form groups -->		
+				
 				<div formGroupName = "store">
 					<input formControlName = "branch">					
 					<input formControlName = "code">
 				</div>		
 				
 				<!-- form arrays -->
+				
 				<div formArrayName = "products">
 					<div *ngFor="let item of items; let i = index">	
 									
@@ -218,7 +221,7 @@ forms
 			
 			this.form.patchValue({})
 
-			// This function reset the control and form state. The whole object must be provided.		
+			// This function reset the control and form state. And the whole object must be provided.		
 			
 			this.form.reset({ 
 				...
@@ -229,6 +232,7 @@ forms
 
    Value accesor
 
+   
    use the value accesor as an alternative to components that handle form control values.
    
    

@@ -1,0 +1,277 @@
+
+
+Injecting values : you can inject common values (e.g. an api route definition), globally
+	
+	ts (component)
+		
+		constructor(@Inject('api') private api : string) 
+
+	ts (module)
+	
+		...		
+		providers: [
+			{ provide: 'api', useValue: 'api/v1/pizzas' }
+		]		
+		...
+		
+
+Injectors
+
+	ts (injector export provider)
+	
+		import { InjectionToken } from '@angular/core';
+		
+		export const API_TOKEN = new InjectionToken<String>('api');
+		
+	ts (module)
+	
+		... 
+		providers: [
+			
+			{ provide: API_TOKEN, useValue: 'api/v1/pizzas'}
+			
+			// you can duplicate this token useValue as much as you want ?, as long
+			// you change the 'injection token value'. The pro of this approach
+			// is that you get to inject your token with types, as shown:
+		]
+		...
+	
+	ts (component)
+	
+		... 
+		constructor(private http: Http, @Inject(API_TOKEN) private api: string)
+		...
+	
+	
+providers and use class
+
+	ts
+		
+		@Component({
+		
+			...
+			providers: [ 		
+				FoodService		// this is a shorthand for { provide: FoodService , useClass: FoodService }	
+				
+				// you can lavarage this shorthand to override the provider class, like we use to in the
+				// testing module			
+				
+				// use class have another peculiarity, each time you use it inside a component, you are
+				// injecting a brand new instance rather than a global or single instance
+			]
+		})
+		
+		...
+		 constructor(private foodService: FoodService) {}
+
+
+Providers and use factory	
+
+	// You may want to use a service for multiple use cases. You can do so by injecting manually
+	// your custom objects or variables
+	
+	ts (FoodService)
+	
+		...
+		constructor(http: Http, api: string) {}
+		... 
+	
+	
+	ts (component)
+	
+		function getPizzas(http : Http) {
+			return new FoodService(http, 'api/pizzas')
+		}
+	
+		@Component({
+		
+			...
+			providers: [ 		
+				{
+					provide: FoodService
+					useFactory: getPizzas
+					deps: [Http]
+				}			
+			]
+		})
+
+
+Providers and use existing
+
+	// use existing serves two purposes; to restrict the use of a service through type checking
+	// and to not inject a new instance of the injector, but to use a single instance, unlike use
+	// class, which injects a new instance every time thats declared inside a component
+	
+	ts (service)
+		
+		
+		@Injectable()
+		export class FoodService {
+		  
+		  ...	
+		  
+		  getSides(): Observable<any[]> {
+			return this.http.get('/api/sides')
+			  .map(response => response.json());
+		  }
+		  
+		  getPizzas(): Observable<any[]> {
+			return this.http.get('/api/pizzas')
+			  .map(response => response.json());
+		  }
+		  
+		  getDrinks(): Observable<any[]> {
+			return this.http.get('/api/drinks')
+			  .map(response => response.json());
+		  }
+		}
+	
+		
+	ts (component)
+	
+		export abstract class DrinkService {
+		  getDrinks: () => Observable<Drink[]>;
+		}
+	
+		@Component({
+		  ...
+		  providers: [
+			FoodService,
+			{ provide: DrinkService, useExisting: FoodService }
+		  ],
+  		  ...
+	    })	
+	    
+	    ...
+	    
+	    ngOnInit() {
+		  
+		  this.items$ = this.foodService.getDrinks();
+		  // foodService.getPizzas and getSides is not available
+	  	}
+  
+
+Configurable ngModules 
+
+	// you may want to make your module completly dynamic. Say that your module
+	// consumes a service. That service may change in the future, or it may change depending on its use case,
+	// eg. its authentication headers. You can provide the module with that information (the auth headers) 
+	// each time you are importing it into a parent module
+
+
+	ts (provider)
+	
+		export interface FoodStoreConfig {
+			storeId: number,
+			storeToken: string
+		}
+
+		export const FOOD_STORE_CONFIG = new InjectionToken<FoodStoreConfig>('FOOD_STORE_CONFIG');
+
+
+	ts (service)
+	
+		...
+		
+		constructor(
+			private http: Http,
+			@Inject(FOOD_STORE_CONFIG) private config: FoodStoreConfig
+		) {}
+
+		getStore() {
+		
+			const options = new RequestOptions();
+
+			options.headers = new Headers({
+			  id: this.config.storeId,
+			  token: this.config.storeToken
+			});
+
+			return this.http.get(`/api/stores`, options)
+			  .map((res) => res.json()[0]);
+		}
+				
+	
+	ts (module)
+	
+		
+		@NgModule({
+			imports: [
+				CommonModule,
+				HttpModule
+			]
+		})
+		export class FoodStoreModule {
+
+			static forRoot(config: FoodStoreConfig): ModuleWithProviders {
+		
+				return {
+				  ngModule: FoodStoreModule,		// this module
+				  providers: [
+					FOOD_PROVIDERS,
+					{
+					  provide: FOOD_STORE_CONFIG,
+					  useValue: config				// the configuration passed by its parent module
+					}
+				  ]
+				};
+			}
+		}
+	
+	ts (parent module)
+	
+		...
+		
+		imports: [
+			BrowserModule,
+			HttpModule,
+			FoodStoreModule.forRoot({				// custom module configuration
+			  storeId: 10292,
+			  storeToken: 'eca938c99a0e9ff91029dc'
+			})
+	  	],
+	  	
+	  	...
+
+
+Zones 
+
+
+	// running functions outside the angular context. Usefull to run
+	// third party libraries or third party components
+	
+	html
+	
+		<div>
+    	  Counter: {{ counter }}	
+	    </div>
+	    
+    ts
+
+		constructor(
+			private zone: NgZone
+		) {}
+	
+		ngOnInit() {
+	
+			this.zone.runOutsideAngular(() => {		// async tasks are run outside the angular context
+		
+			  for (let i = 0; i < 100; i++) {
+				setTimeout(() => this.counter++);	// meaning that this counter wont be updated in the	
+													// html template as any logic executed here is not visible
+													// to angular change detection 														
+			  }
+			  		  			  
+			  this.zone.run(() => {
+				setTimeout(() => this.counter = this.counter, 1000);	// to get that value reflected back into our template, you have to reenter the zone 
+																		// and re-assign that value, so the angular change detector can detect that change
+																		// and refresh the html
+			  });
+			  
+			  // do note that we used the setTimeOut function. If we used synchronous tasks inside the 'runOutsideAngular', we would
+			  // see the changes reflected back into the html as angular stops 'watching' async tasks and not sync tasks
+			  
+			});
+		}
+
+  	

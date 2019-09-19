@@ -194,7 +194,7 @@ Testing component methods
 	});
 
 	
-Testing templates
+Testing templates (DOM manipulation)
 
 	html
 	
@@ -289,6 +289,7 @@ Testing templates
 																									// and down through our div element
 			
 			fixture.detectChanges();
+			
 			expect(component.value).toBe(1);
 		  });
 
@@ -301,7 +302,14 @@ Testing components with services
 	ts
 	
 		class MockStockInventoryService {
-		...
+		
+		  getProducts() {
+			return Observable.of([{ id: 1, price: 10, name: 'Test' }, { id: 2, price: 100, name: 'Another test'}]);
+		  }
+		  
+		  getCartItems() {
+			return Observable.of([{ product_id: 1, quantity: 10 }, { product_id: 2, quantity: 5 }]);
+		  }
 		}
 
 		let component: StockInventoryComponent;
@@ -316,7 +324,7 @@ Testing components with services
 				ReactiveFormsModule
 			  ],
 			  declarations: [
-				StockInventoryComponent						// this component uses components inside him
+				StockInventoryComponent						// this component uses components inside its html
 				....										// you must declare them also
 			  ],
 			  providers: [
@@ -327,7 +335,7 @@ Testing components with services
 			fixture = TestBed.createComponent(StockInventoryComponent);
 			component = fixture.componentInstance;
 			el = fixture.debugElement;
-			service = el.injector.get(StockInventoryService);
+			service = el.injector.get(StockInventoryService);		// retrieving angular injections
 
 		});
 
@@ -345,21 +353,67 @@ Testing components with services
 
 		it('should create a stock item for each cart item', () => {
 		
+			// component spying
 			spyOn(component, 'addStock');
 
 			component.ngOnInit();
-			
-			// method call verifying
+		
 			expect(component.addStock).toHaveBeenCalledWith({ product_id: 1, quantity: 10 });
 			expect(component.addStock).toHaveBeenCalledWith({ product_id: 2, quantity: 5 });
 		});
 
 
+No errors schema
+
+	
+	import { NO_ERRORS_SCHEMA } from '@angular/core';
+
+	TestBed.configureTestingModule({
+      imports: [],
+      declarations: [
+        StockInventoryComponent			// this component has 3 child elements inside him, 
+        								// you can avoid importing these components, but you must
+    									// add NO_ERRORS_SCHEMA into the schemas property
+      ],
+      schemas: [NO_ERRORS_SCHEMA],     
+    });
 
 
+Testing directives and its HostListener decorator
 
 
+	html
+		
+		<input CreditCardDirective>
+		
+	ts
+	
+		@HostListener('input', ['$event'])
+	  	onKeyDown(event: KeyboardEvent) {
 
+			const input = event.target as HTMLInputElement; 
+			...   
+
+	    }
+
+	spec.ts
+	
+		beforeEach(() => {
+			
+			el = fixture.debugElement;
+		});
+
+		it('should format the string with spaces', () => {
+	
+			const directive = el.query(By.directive(CreditCardDirective)).nativeElement;
+		
+			// directive hostListener manual trigger
+			
+			directive.value = '475123';
+			directive.dispatchEvent(new Event('input'));
+		
+			expect(directive.value).toBe('4751 23');
+		})
 
 
 
