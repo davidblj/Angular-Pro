@@ -30,6 +30,9 @@ Current: 294
 		you may define modules inside modules
 		a shared module inside a module is to place components that are shared among that module modules
 		
+		stateless components change detection strategy must always be of the type onPush
+		If you want to share state between modules, do encapsuate them in a parent module
+		
 
 	Documentation spec
 
