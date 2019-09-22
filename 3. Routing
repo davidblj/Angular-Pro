@@ -138,6 +138,7 @@ Auxialiary named outlets reset
 Outlet navigation recap
 
 	<a [routerLink]="folder/inbox">
+	<a routerLink="folder/inbox">
 	<a [routerLink]="[{ outlets: { primary: 'folder/inbox', pane: null } }]">																						
 	<a [routerLink]="['', { outlets: { pane: ['message', message.id] } }]">
 

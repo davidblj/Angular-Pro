@@ -86,7 +86,7 @@ module.exports = {
       warnings: false
     },
     publicPath: '/build/',
-    port: 3000
+    port: 8080
   },
   devtool: 'sourcemap',
   entry: {

@@ -17,11 +17,16 @@ Current: 294
 	
 		resolvers are put under the component we want to resolve
 		guards are punt under the components they are trying to guard		
+		
 		services are put under the folder called "services" 
 		interfaces are put under a folder named "models" on each module
+		
 		the main entry point of a module might be or might not be a container component
 		use a module for the authentication, and place the authentication guard in there
 		spec files are put alongside whatever they are testing
+		
+		you may define modules inside modules
+		a shared module inside a module is to place components that are shared among that module modules
 		
 
 	Documentation spec
@@ -164,6 +169,7 @@ forms
 		constructor(private fb: FormBuilder) { }
 	
 		this.form = new FormGroup({
+		
 			store: new FormGroup({
 			  branch: new FormControl('B182'),
 			  code: new FormControl('1234')
@@ -562,6 +568,7 @@ Events
 ng-content selectors
 
 	<ng-content select="component"></ng-content>
+	<ng-content select="htmlTag"></ng-content>
 	<ng-content select=".css-class"></ng-content>		
 	<ng-content select="#html-id"></ng-content>	
 	
