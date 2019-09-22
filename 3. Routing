@@ -137,14 +137,13 @@ Auxialiary named outlets reset
 																					
 Outlet navigation recap (html)
 
-	<a [routerLink]="folder/inbox">
-	<a routerLink="folder/inbox">															// html route navigation
 	
+	<a routerLink="folder/inbox">															// html route navigation	
 	<a [routerLink]="[{ outlets: { primary: 'folder/inbox', pane: null } }]">				// reset																											
 	<a [routerLink]="['', { outlets: { pane: ['message', message.id] } }]">					// pane navigation
 
-	// the first argument (as an string and not an object) may or may not be preceded by an slash ; an slash marks the routing as an absolute route.  
-	// each array element represents a level in the routing def
+	// the first argument in the array (as an string and not an object) may or may not be preceded by an slash ; an slash marks the routing as an absolute route.  
+	// each array element represents a level in the routing definition
 
 
 Lazy loading (loading modules on demand)
