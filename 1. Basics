@@ -19,6 +19,8 @@ Current: 294
 		guards are punt under the components they are trying to guard		
 		
 		services are put under the folder called "services" 
+			services may be further encapsulated into folders
+			
 		interfaces are put under a folder named "models" on each module
 		
 		the main entry point of a module might be or might not be a container component
@@ -576,7 +578,6 @@ ng-content selectors
 @ContentChild
 
 	// you can subscribe to projected component output event like this
-	// usefull for: 
 	
 	parent component
 

@@ -117,8 +117,8 @@ Auxialiary named outlets
 	
 		<a 
 		  class="mail-item"
-		  [routerLink]="['', { outlets: { pane: ['message', message.id] } }]" 		// you can route to multiple outlets. The first argument
-		  routerLinkActive="active">												// stands for a relative url path
+		  [routerLink]="['', { outlets: { pane: ['message', message.id] } }]" 		// you can route to multiple outlets. Note: the first argument in the array
+		  routerLinkActive="active">												// stands as a relative url path
 		  
 		// the routerLinkActive assigns the class active if this link is active
 		
@@ -135,12 +135,13 @@ Auxialiary named outlets reset
 																							// the secondary outlet will reset its values
 																					
 																					
-Outlet navigation recap
+Outlet navigation recap (html)
 
 	<a [routerLink]="folder/inbox">
-	<a routerLink="folder/inbox">
-	<a [routerLink]="[{ outlets: { primary: 'folder/inbox', pane: null } }]">																						
-	<a [routerLink]="['', { outlets: { pane: ['message', message.id] } }]">
+	<a routerLink="folder/inbox">															// html route navigation
+	
+	<a [routerLink]="[{ outlets: { primary: 'folder/inbox', pane: null } }]">				// reset																											
+	<a [routerLink]="['', { outlets: { pane: ['message', message.id] } }]">					// pane navigation
 
 	// the first argument (as an string and not an object) may or may not be preceded by an slash ; an slash marks the routing as an absolute route.  
 	// each array element represents a level in the routing def
